@@ -1,7 +1,10 @@
 const express = require('express');
 const bodyParser = require('body-parser');
 const router = express.Router();
+const bcrypt = require('bcryptjs');
+const passport = require('passport');
 
+const User = require('../models/user');
 const Post = require('../models/post');
 
 router.use(bodyParser.urlencoded({ extended: false }));
@@ -19,6 +22,51 @@ router.get('/', (req, res) => {
      * ning saadetakse kliendile, kes selle päringu teostas (ehk kes sellele URL-ile läks)
     */
     res.render('pages/index');
+});
+
+router.get('/login', (req, res) => {
+    res.render('pages/login');
+});
+
+router.post('/login', (req, res, next) => {
+    passport.authenticate('local', {
+        successRedirect: '/',
+        failureRedirect: '/login',
+        failureFlash: false
+    })(req, res, next);
+});
+
+router.get('/register', (req, res) => {
+    res.render('pages/register');
+});
+
+router.post('/register', (req, res) => {
+    let email = req.body.username;
+    let password = req.body.password;
+    let password2 = req.body.password2;
+
+    let newUser = new User({
+        email: email,
+        password: password
+    });
+
+    bcrypt.genSalt(10, function(err, salt) {
+        bcrypt.hash(newUser.password, salt, function(err, hash) {
+            if(err) {
+                console.log(err);
+                return res.redirect('/register');
+            }
+
+            newUser.password = hash;
+            newUser.save(function(err) {
+                if(err) {
+                    console.log(err);
+                    return res.redirect('/register');
+                }
+                return res.redirect('/login');
+            })
+        });
+    });
 });
 
 router.get('/posts', (req, res) => {

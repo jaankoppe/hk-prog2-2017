@@ -1,6 +1,7 @@
 const express = require('express'); // Lisame express mooduli, selle abil loome Node.js baasil veebiserveri
 const mongoose = require('mongoose');
-
+const passport = require('passport');
+const session = require('express-session');
 const indexRoutes = require('./controllers/index');
 const infoRoutes = require('./controllers/info');
 
@@ -36,10 +37,27 @@ app.set('view engine', 'ejs');
 
 app.use(express.static('public'));
 
+app.use(session({
+    secret: 'session secret',
+    resave: true,
+    saveUninitialized: true
+}));
 /**
  * Port, mida expressi veebiserver kasutab
 */
 const PORT = 3000;  
+
+// Passport config
+require('./config/passport')(passport);
+
+// Passport middleware
+app.use(passport.initialize());
+app.use(passport.session());
+
+app.get('*', (req, res, next) => {
+    res.locals.user = req.user || null;
+    next();
+});
 
 app.use('/server-info', infoRoutes);
 app.use('/', indexRoutes);

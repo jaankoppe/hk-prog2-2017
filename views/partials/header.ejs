@@ -10,6 +10,16 @@
             <ul class="navbar-nav mr-auto">
                 <li class="nav-item"><a class="nav-link" href="/">Esileht</a></li>
                 <li class="nav-item"><a class="nav-link" href="/server-info">Server Info</a></li>
+
+                
+            </ul>
+            <ul class="navbar-nav navbar-right">
+                <% if(!user) { %>
+                <li class="nav-item"><a class="nav-link" href="/register">Register</a></li>
+                <li class="nav-item"><a class="nav-link" href="/login">Login</a></li>
+                <% }else{ %>
+                <li class="nav-item"><a class="nav-link" href="/logout">Logout</a></li>    
+                <% } %>
             </ul>
         </div>
     </div>
