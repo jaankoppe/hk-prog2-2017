@@ -15,7 +15,7 @@
                 <div class="card">
                     <div class="card-body">
                         <h2 class="card-title"><a href="/post/<%= post._id %>"><%= post.title %></a></h2>
-                        <div><%= post.author %> | <%= post.createdAt %></div>
+                        <div><% if(post.author && post.author.email) { %><%= post.author.email %><% } %> | <%= post.createdAt %></div>
                         <p><%= post.content %></p>
                     </div>
                 </div>

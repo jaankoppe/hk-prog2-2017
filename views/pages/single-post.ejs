@@ -10,10 +10,13 @@
             <div class="container">
                 <h1><%= post.title %></h1>
 
-                <div><%= post.author %> | <%= post.createdAt %></div>
+                <div><%= post.author.email %> | <%= post.createdAt %></div>
                 <p><%= post.content %></p>
                 <hr>
-                <a href="/post/<%= post._id %>/edit" class="btn btn-primary">Edit</a>
+                <% if(user && user.id == post.author._id) { %>
+                    <a href="/post/<%= post._id %>/edit" class="btn btn-primary">Edit</a>
+                <% } %>
+                
             </div>
 
             <% if(locals.allPosts) { %>

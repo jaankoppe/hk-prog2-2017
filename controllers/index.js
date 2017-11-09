@@ -16,6 +16,17 @@ router.use(bodyParser.json());
  * kus esimene parameeter on relatiivne asukoht serveri mõistes
  * ehk kui veebiserver on localhost:3000, siis app.get('/asukoht') oleks localhost:3000/asukoht.
 */
+
+function ensureAuthenticated(req, res, next) {
+    if(req.isAuthenticated()) {
+        return next();
+    }else{
+        req.flash('danger', 'Please login');
+        return res.redirect('/login');
+    }
+}
+
+
 router.get('/', (req, res) => {
     /**
      * Vaate "renderdamine", ehk parsitakse EJS süntaks HTML-iks kokku
@@ -32,8 +43,14 @@ router.post('/login', (req, res, next) => {
     passport.authenticate('local', {
         successRedirect: '/',
         failureRedirect: '/login',
-        failureFlash: false
+        failureFlash: true
     })(req, res, next);
+});
+
+router.get('/logout', (req, res) => {
+    req.logout();
+    req.flash('success', 'You are logged out');
+    return res.redirect('/');
 });
 
 router.get('/register', (req, res) => {
@@ -70,10 +87,11 @@ router.post('/register', (req, res) => {
 });
 
 router.get('/posts', (req, res) => {
-    Post.find({}, (err, posts) => {
+    Post.find({}).populate('author').exec( (err, posts) => {
         if(err) {
             console.log(err);
         }else{
+            
             res.locals.posts = posts;
             console.log(posts);
             res.render('pages/posts');
@@ -82,7 +100,7 @@ router.get('/posts', (req, res) => {
     });
 });
 // Postituse lisamise vaade
-router.get('/posts/add', (req, res) => {
+router.get('/posts/add', ensureAuthenticated, (req, res) => {
     res.render('pages/add-post');
 });
 // Postituse lisamine
@@ -90,7 +108,7 @@ router.post('/posts/add', (req, res) => {
     console.log(req.body);
     let newPost = new Post({
         title: req.body.title,
-        author: req.body.author,
+        author: req.user._id,
         content: req.body.content
     });
 
@@ -107,7 +125,7 @@ router.post('/posts/add', (req, res) => {
 // Üksiku postituse vaade
 router.get('/post/:id', (req, res) => {
     let postId = req.params.id;
-    Post.findOne({_id: postId}).exec((err, post) => {
+    Post.findOne({_id: postId}).populate('author').exec((err, post) => {
         if(err) {
             console.log(err);
             res.redirect('/posts');
@@ -144,34 +162,43 @@ router.get('/post/:id/sidebar', (req, res) => {
 });
 
 // Postituse muutmise vaade
-router.get('/post/:id/edit', (req, res) => {
+router.get('/post/:id/edit',ensureAuthenticated, (req, res) => {
     let postId = req.params.id;
-    Post.findOne({_id: postId}).exec((err, post) => {
+    Post.findOne({_id: postId, author: req.user}).exec((err, post) => {
         if(err) {
             console.log(err);
             res.redirect('/posts');
         }else{
-            res.locals.post = post;
-            res.render('pages/edit-post');
+            if(post) {
+                res.locals.post = post;
+                res.render('pages/edit-post');
+            }else{
+                return res.redirect('/posts');
+            }
+            
         }
     });
 });
 
-router.post('/post/:id/edit', (req, res) => {
+router.post('/post/:id/edit', ensureAuthenticated, (req, res) => {
     let post = {
         title: req.body.title,
         author: req.body.author,
         content: req.body.content
     };
 
-    let query = {_id: req.params.id};
+    let query = {_id: req.params.id, author: req.user};
 
     Post.update(query, post, (err) => {
         if(err) {
             console.log(err);
             res.redirect('/post/' + req.params.id + '/edit');
         }else{
-            res.redirect('/post/' + req.params.id);
+            if(post) {
+                res.redirect('/post/' + req.params.id);
+            }else{
+                res.redirect('/posts');
+            }
         }
     });
 
